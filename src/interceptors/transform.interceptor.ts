@@ -26,7 +26,6 @@ export class TransformInterceptor<T>
             delete data.user.password_hash;
           }
         }
-        console.log({ data });
         return data;
       }),
     );

@@ -1,7 +1,8 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetUserDto } from './dto';
 import { Prisma } from '@prisma/client';
+import { SendgridService } from 'src/sendgrid/sendgrid.service';
 
 @Injectable()
 export class UserService {

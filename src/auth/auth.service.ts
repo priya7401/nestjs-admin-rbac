@@ -17,6 +17,7 @@ import * as crypto from 'crypto';
 import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { SendgridService } from 'src/sendgrid/sendgrid.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private config: ConfigService,
     private prisma: PrismaService,
     private jwt: JwtService,
+    private sendgrid: SendgridService,
   ) {}
 
   async createUser(dto: CreateUserDto) {
@@ -48,8 +50,9 @@ export class AuthService {
       });
 
       // step 3: send success message to user in API response and mail the user
-      console.log('///////////// password reset token: ' + randomToken);
-      console.log('///////////// user_id: ' + newUser.id);
+      const passwordResetLink: string = `http://localhost:${this.config.get('PORT')}/api/v1/auth/reset_password?id=${newUser.id}&token=${randomToken}`;
+
+      await this.sendgrid.sendEmail(dto.email, passwordResetLink);
 
       return {
         message:

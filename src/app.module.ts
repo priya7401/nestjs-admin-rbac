@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
+import { SendgridService } from './sendgrid/sendgrid.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { ConfigModule } from '@nestjs/config';
     UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SendgridService],
 })
 export class AppModule {}
