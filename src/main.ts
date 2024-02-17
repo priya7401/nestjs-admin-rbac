@@ -18,7 +18,7 @@ async function bootstrap() {
       // do not save the session if the user is not logged in/authenticated
       saveUninitialized: false,
       cookie: {
-        maxAge: 3600000,
+        maxAge: 10 * 60 * 60,
       },
     }),
   );

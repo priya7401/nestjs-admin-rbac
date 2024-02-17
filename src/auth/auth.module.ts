@@ -6,6 +6,7 @@ import { UserService } from 'src/user/user.service';
 import { LocalStrategy } from './strategy/local.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { SessionSerializer } from './serializer';
+import { AuthenticatedGuard, LocalAuthGuard, RolesGuard } from './guard';
 
 @Module({
   imports: [PassportModule.register({ session: true })],
@@ -15,6 +16,9 @@ import { SessionSerializer } from './serializer';
     UserService,
     LocalStrategy,
     SessionSerializer,
+    LocalAuthGuard,
+    AuthenticatedGuard,
+    RolesGuard,
   ],
   controllers: [AuthController],
 })
