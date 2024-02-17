@@ -1,9 +1,8 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty } from 'class-validator';
+import { IsInt } from 'class-validator';
 
-export class GetUserDto {
+export class GetUserByIdDto {
   @Type(() => Number)
   @IsInt()
-  @IsNotEmpty()
   id: number;
 }

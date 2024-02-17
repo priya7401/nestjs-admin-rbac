@@ -12,20 +12,20 @@ import {
   ResetPasswordQueryDto,
 } from './dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as argon from 'argon2';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SendgridService } from 'src/sendgrid/sendgrid.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
-    private jwt: JwtService,
     private sendgrid: SendgridService,
+    private userService: UserService,
   ) {}
 
   async createUser(dto: CreateUserDto) {
@@ -119,16 +119,25 @@ export class AuthService {
     }
   }
 
-  generateToken(userId: number, email: string) {
-    const payload = {
-      sub: userId,
-      email: email,
-    };
+  async validateUser(email: string, password: string, role: string) {
+    try {
+      const user = await this.userService.getUserByEmail(email);
 
-    return this.jwt.signAsync(payload, {
-      expiresIn: '15m',
-      secret: this.config.get('JWT_SECRET'),
-    });
+      let passwordHash = user.password_hash;
+      const isValid = await argon.verify(passwordHash, password);
+
+      if (!isValid || Role[role] != user.role)
+        throw new UnauthorizedException('Invalid credentials');
+
+      return user;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('User not found');
+        }
+      }
+      throw error;
+    }
   }
 
   async deletePasswordToken(id: string) {
