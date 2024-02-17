@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { Request } from 'express';
 import { Roles } from 'src/decorators';
 
