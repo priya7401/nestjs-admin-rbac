@@ -24,11 +24,9 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: CreateUserDto) {
-    // TODO: handle the case of eixstence of only 1 SUPER_ADMIN
-    if (dto.role != Role.ADMIN)
-      throw new ForbiddenException(
-        'Only Admin can register or create new account',
-      );
+    if (dto.role == Role.SUPER_ADMIN) {
+      return this.authService.createSuperAdminUser(dto);
+    }
     return this.authService.createUser(dto);
   }
 

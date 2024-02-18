@@ -12,7 +12,7 @@ import {
   ResetPasswordQueryDto,
 } from './dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, Role, SuperAdmin } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as argon from 'argon2';
 import { ConfigService } from '@nestjs/config';
@@ -30,6 +30,12 @@ export class AuthService {
 
   async createUser(dto: CreateUserDto) {
     try {
+      // TODO: handle the case of eixstence of only 1 SUPER_ADMIN
+      if (dto.role != Role.ADMIN) {
+        throw new ForbiddenException(
+          'Only Admin can register or create new account',
+        );
+      }
       // step 1: create new user in DB
       const newUser = await this.prisma.user.create({ data: dto });
 
@@ -53,6 +59,61 @@ export class AuthService {
       const passwordResetLink: string = `http://localhost:${this.config.get('PORT')}/api/v1/auth/reset_password?id=${newUser.id}&token=${randomToken}`;
 
       await this.sendgrid.sendEmail(dto.email, passwordResetLink);
+
+      return {
+        message:
+          'success, mail sent to set password. This link will expire in 24hrs',
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ForbiddenException('User already exists, please login!');
+        }
+      }
+      throw error;
+    }
+  }
+
+  async createSuperAdminUser(dto: CreateUserDto) {
+    try {
+      const superAdminCount: SuperAdmin[] =
+        await this.prisma.superAdmin.findMany();
+
+      if (superAdminCount && superAdminCount.length) {
+        throw new ForbiddenException(
+          'Super Admin already exists, please login',
+        );
+      }
+      // step 1: create new user in DB
+      const newUser = await this.prisma.user.create({ data: dto });
+
+      // step 2: send email for verification
+
+      // create random token to be sent in the email link to reset the password
+      const randomToken = crypto.randomBytes(32).toString('hex');
+
+      // create a hash for the above token to store in DB
+      const hash = await argon.hash(randomToken);
+
+      // save the token/hash in the DB
+      await this.prisma.token.create({
+        data: {
+          token: hash,
+          user_id: newUser.id,
+        },
+      });
+
+      // step 3: send success message to user in API response and mail the user
+      const passwordResetLink: string = `http://localhost:${this.config.get('PORT')}/api/v1/auth/reset_password?id=${newUser.id}&token=${randomToken}`;
+
+      await this.sendgrid.sendEmail(dto.email, passwordResetLink);
+
+      // add the user in the super user table
+      await this.prisma.superAdmin.create({
+        data: {
+          user_id: newUser.id,
+        },
+      });
 
       return {
         message:
